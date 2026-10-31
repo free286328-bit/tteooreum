@@ -128,6 +128,7 @@ svg{display:block}
 .memo{display:flex;flex-direction:column;gap:6px;text-align:left;width:100%;min-width:0;padding:14px 6px;border-top:1px solid var(--glass-line);
   border-radius:4px;animation:fade .5s ease both;transition:background .2s}
 .group .eyebrow + .memo{border-top:0}
+.field .tg{height:auto;min-height:42px;padding:0 10px;border-radius:14px;font-size:13px}
 .memo:hover{background:var(--glass)}
 @keyframes fade{from{opacity:0;transform:translateY(6px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
 @media (prefers-reduced-motion:reduce){.memo{animation:none}}
@@ -155,13 +156,19 @@ svg{display:block}
 .day{aspect-ratio:1/1;max-width:100%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   font-size:14.5px;font-variant-numeric:tabular-nums;transition:background .2s}
 .day.out{visibility:hidden}
-.day.past{color:var(--faint)}
+.day.past{color:var(--muted)}
 .day.is-today{box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
 .day.sel{background:var(--accent);color:var(--base);box-shadow:0 0 18px var(--glow)}
 .dots{display:flex;gap:3px;height:4px}
 .dots i{width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:.7}
 .dots i.imp{background:var(--mark);opacity:1;box-shadow:0 0 5px var(--mark)}
+.dots i.w{background:transparent;box-shadow:inset 0 0 0 1px var(--muted);opacity:.9}
 .day.sel .dots i{background:var(--base)}
+.day.sel .dots i.w{background:transparent;box-shadow:inset 0 0 0 1px var(--base)}
+.sub{font-size:12px;color:var(--muted);letter-spacing:.14em;margin:6px 0 0 4px}
+.sub:first-child{margin-top:0}
+button.eyebrow.jump{align-self:flex-start;padding:0;margin-left:2px}
+.jump .arr{opacity:.5;font-size:12px}
 .sched-list{display:flex;flex-direction:column;gap:10px}
 .srow{display:grid;grid-template-columns:58px 1fr;gap:14px;text-align:left;border-radius:20px;padding:14px 16px;align-items:center;width:100%;animation:fade .45s ease both}
 .srow .w{display:flex;flex-direction:column;line-height:1.35;border-right:1px solid var(--glass-line);padding-right:10px}
@@ -275,7 +282,7 @@ hr.soft{border:0;height:1px;background:var(--glass-line);margin:2px 0;width:100%
 
   <nav class="tabs" role="tablist">
     <button id="tab-memo" role="tab" data-tab="memo">생각</button>
-    <button id="tab-sched" role="tab" data-tab="sched">일정</button>
+    <button id="tab-sched" role="tab" data-tab="sched">달력</button>
   </nav>
 
   <label class="search" id="search-bar" hidden>
@@ -326,16 +333,15 @@ hr.soft{border:0;height:1px;background:var(--glass-line);margin:2px 0;width:100%
     <div class="grab"></div>
     <textarea id="e-text" aria-label="내용"></textarea>
     <div class="fields">
-      <label class="field">날짜<input type="date" id="e-date"></label>
+      <label class="field">일정 날짜<input type="date" id="e-date"></label>
       <label class="field">시간<input type="time" id="e-time"></label>
+      <label class="field">적은 날<input type="date" id="e-made"></label>
+      <div class="field"><span>&nbsp;</span><button type="button" class="tg" id="e-date-x" style="justify-content:center">일정 날짜 빼기</button></div>
     </div>
     <div class="toggles">
       <button type="button" class="tg imp" id="e-imp" aria-pressed="false"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.6 4.8 2.2 6.9 7 7.6v.8c-4.8.7-6.4 2.8-7 7.6h-.8c-.6-4.8-2.2-6.9-7-7.6v-.8c4.8-.7 6.4-2.8 7-7.6z"/></svg>중요</button>
       <button type="button" class="tg" id="e-pin" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l-1 6 4 4H6l4-4zM12 13v8"/></svg>맨 위 고정</button>
       <button type="button" class="tg" id="e-done" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>끝냄</button>
-    </div>
-    <div class="sheet-foot">
-      <span class="created" id="e-created"></span>
     </div>
     <div class="sheet-foot">
       <button type="button" class="del" id="e-del">지우기</button>
@@ -471,7 +477,7 @@ function renderMemo(){
     let k=0;h+='<div class="list">';
     if(pinned.length)h+='<div class="group"><div class="eyebrow">고정</div>'+pinned.map(i=>card(i,k++)).join('')+'</div>';
     let cur=null,buf='';
-    rest.forEach(i=>{const g=glabel(i.created);if(g!==cur){if(cur!==null)buf+='</div>';buf+='<div class="group"><div class="eyebrow">'+g+'</div>';cur=g}buf+=card(i,k++)});
+    rest.forEach(i=>{const g=glabel(i.created);if(g!==cur){if(cur!==null)buf+='</div>';buf+='<div class="group"><button class="eyebrow jump" data-jump="'+ymd(new Date(i.created))+'">'+g+'<span class="arr">›</span></button>';cur=g}buf+=card(i,k++)});
     if(cur!==null)buf+='</div>';
     h+=buf+'</div>';
   }
@@ -492,13 +498,18 @@ function renderCal(){
   const y=calMonth.getFullYear(),m=calMonth.getMonth(),t=T();
   $('cal-title').textContent=y+'. '+(m+1);
   const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),map={};
-  S.items.forEach(i=>{if(i.date&&!(S.hideDone&&i.done))(map[i.date]=map[i.date]||[]).push(i)});
+  const wmap={};
+  S.items.forEach(i=>{
+    if(i.date&&!(S.hideDone&&i.done))(map[i.date]=map[i.date]||[]).push(i);
+    if(!i.date){const c=ymd(new Date(i.created));wmap[c]=(wmap[c]||0)+1}
+  });
   let h='';for(const w of WD)h+='<div class="wd">'+w+'</div>';
   for(let k=0;k<first;k++)h+='<div class="day out"></div>';
   for(let d=1;d<=days;d++){
-    const s=y+'-'+pad(m+1)+'-'+pad(d),ev=map[s]||[];
-    const dots=ev.slice(0,3).map(e=>'<i'+(e.important?' class="imp"':'')+'></i>').join('');
-    h+='<button class="day'+(s<t?' past':'')+(s===t?' is-today':'')+(s===selDay?' sel':'')+'" data-day="'+s+'" aria-label="'+kd(s)+(ev.length?', 일정 '+ev.length+'개':'')+'">'+d+'<span class="dots">'+dots+'</span></button>';
+    const s=y+'-'+pad(m+1)+'-'+pad(d),ev=map[s]||[],wn=wmap[s]||0;
+    let dots=ev.slice(0,2).map(e=>'<i'+(e.important?' class="imp"':'')+'></i>').join('');
+    if(wn)dots+='<i class="w"></i>';
+    h+='<button class="day'+(s<t?' past':'')+(s===t?' is-today':'')+(s===selDay?' sel':'')+'" data-day="'+s+'" aria-label="'+kd(s)+(ev.length?', 일정 '+ev.length+'개':'')+(wn?', 적은 생각 '+wn+'개':'')+'">'+d+'<span class="dots">'+dots+'</span></button>';
   }
   $('cal-grid').innerHTML=h;
 }
@@ -507,13 +518,23 @@ function srow(i,k){
   return '<button class="srow glass'+(i.done?' done':'')+'" data-id="'+i.id+'" style="animation-delay:'+Math.min(k*40,320)+'ms"><span class="w"><b>'+(parse(i.date).getMonth()+1)+'.'+parse(i.date).getDate()+'</b><span>'+WD[parse(i.date).getDay()]+(i.time?'<br>'+i.time:'')+'</span></span>'+
     '<span class="body"><span class="t">'+(i.important?SPARK:'')+'<span>'+esc(i.text)+'</span></span><span class="dl'+(n>=0&&n<=3&&!i.done?' soon':'')+'">'+dl(n)+'</span></span></button>';
 }
+function wrow(i,k){
+  const c=new Date(i.created);
+  return '<button class="srow glass'+(i.done?' done':'')+'" data-id="'+i.id+'" style="animation-delay:'+Math.min(k*40,320)+'ms"><span class="w"><b>'+pad(c.getHours())+':'+pad(c.getMinutes())+'</b><span>적음</span></span>'+
+    '<span class="body"><span class="t">'+(i.important?SPARK:'')+'<span>'+fmt(i.text)+'</span></span></span></button>';
+}
 function renderSched(){
   const t=T(),dated=S.items.filter(i=>i.date&&!(S.hideDone&&i.done));
   $('sel-clear').hidden=!selDay;
   if(selDay){
     $('sched-title').textContent=kd(selDay);
     const l=dated.filter(i=>i.date===selDay).sort(sortD);
-    $('sched-list').innerHTML=l.length?l.map(srow).join(''):'<div class="empty" style="padding:28px 10px">비어 있는 날이에요.<br>아래 달력 버튼으로 이 날에 적어둘 수 있어요.</div>';
+    const w=S.items.filter(i=>!i.date&&ymd(new Date(i.created))===selDay).sort((a,b)=>a.created-b.created);
+    let h='';
+    if(l.length)h+='<div class="sub">이 날의 일정</div>'+l.map(srow).join('');
+    if(w.length)h+='<div class="sub">이 날 적은 생각</div>'+w.map(wrow).join('');
+    if(!h)h='<div class="empty" style="padding:28px 10px">비어 있는 날이에요.<br>아래 칸에 적으면 이 날에 담겨요.</div>';
+    $('sched-list').innerHTML=h;
     return;
   }
   $('sched-title').textContent='다가오는 날들';
@@ -531,31 +552,35 @@ function render(){
 }
 
 /* composer */
-const q=$('quick'),qd=$('q-date');let qImp=false;
+const q=$('quick'),qd=$('q-date');let qImp=false,qMade=null;
 function grow(){q.style.height='auto';q.style.height=Math.min(q.scrollHeight,170)+'px';$('send').disabled=!q.value.trim()}
 q.addEventListener('input',()=>{grow();try{localStorage.setItem(KEY+'.draft',q.value)}catch(e){}});
 q.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();$('composer').requestSubmit()}});
 function syncPick(){
-  const v=qd.value;$('t-date').classList.toggle('on',!!v);
-  $('picked').hidden=!v&&!qImp;$('picked-spark').hidden=!qImp;
-  $('picked-txt').textContent=v?kd(v)+(diff(v)>=0?' · '+dl(diff(v)):''):'중요한 생각';
+  const v=qd.value;if(v)qMade=null;$('t-date').classList.toggle('on',!!v);
+  $('picked').hidden=!v&&!qImp&&!qMade;$('picked-spark').hidden=!qImp;
+  $('picked-txt').textContent=v?kd(v)+' 일정'+(diff(v)>=0?' · '+dl(diff(v)):''):qMade?kd(qMade)+'에 적은 생각으로':'중요한 생각';
 }
 qd.addEventListener('change',syncPick);qd.addEventListener('input',syncPick);
-$('picked-x').addEventListener('click',()=>{qd.value='';qImp=false;$('t-imp').classList.remove('on');$('t-imp').setAttribute('aria-pressed',false);syncPick()});
+$('picked-x').addEventListener('click',()=>{qd.value='';qMade=null;qImp=false;$('t-imp').classList.remove('on');$('t-imp').setAttribute('aria-pressed',false);syncPick()});
 $('t-imp').addEventListener('click',()=>{qImp=!qImp;$('t-imp').classList.toggle('on',qImp);$('t-imp').setAttribute('aria-pressed',qImp);syncPick()});
 $('composer').addEventListener('submit',e=>{
   e.preventDefault();const text=q.value.trim();if(!text)return;
   const date=qd.value||null;
-  S.items.push({id:uid(),text,created:Date.now(),date,time:null,important:qImp,done:false,pinned:false});save();
-  q.value='';qd.value='';qImp=false;$('t-imp').classList.remove('on');$('t-imp').setAttribute('aria-pressed',false);syncPick();grow();
+  let created=Date.now();
+  if(!date&&qMade){const n=new Date(),d=parse(qMade);d.setHours(n.getHours(),n.getMinutes(),n.getSeconds());created=d.getTime()}
+  S.items.push({id:uid(),text,created,date,time:null,important:qImp,done:false,pinned:false});save();
+  const wasMade=!date&&qMade;
+  q.value='';qd.value='';qMade=null;qImp=false;$('t-imp').classList.remove('on');$('t-imp').setAttribute('aria-pressed',false);syncPick();grow();
   try{localStorage.removeItem(KEY+'.draft')}catch(e){}
   if(date){const d=parse(date);calMonth=new Date(d.getFullYear(),d.getMonth(),1)}
   if(query){query='';$('q-search').value=''}
-  render();toast(date?'그 날에 담아뒀어요':'담아뒀어요');q.focus();
+  if(selDay&&S.tab==='sched')pickDay(selDay);
+  render();toast(date?'그 날 일정으로 담아뒀어요':wasMade?'그 날 적은 생각으로 담아뒀어요':'담아뒀어요');q.focus();
 });
 
 /* tabs, search */
-function setTab(t){S.tab=t;save();render();$('scroller').scrollTo({top:0})}
+function setTab(t){if(t==='memo'&&selDay){selDay=null;pickDay(null)}S.tab=t;save();render();$('scroller').scrollTo({top:0})}
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
 function openSearch(v){$('search-bar').hidden=false;$('b-search').setAttribute('aria-pressed',true);if(v!==undefined){$('q-search').value=v;query=v}if(S.tab!=='memo')setTab('memo');else render();$('q-search').focus()}
 function closeSearch(){$('search-bar').hidden=true;$('b-search').setAttribute('aria-pressed',false);$('q-search').value='';query='';render()}
@@ -566,8 +591,16 @@ $('q-search').addEventListener('input',e=>{query=e.target.value.trim();renderMem
 /* calendar */
 $('cal-prev').addEventListener('click',()=>{calMonth.setMonth(calMonth.getMonth()-1);renderCal()});
 $('cal-next').addEventListener('click',()=>{calMonth.setMonth(calMonth.getMonth()+1);renderCal()});
-$('cal-grid').addEventListener('click',e=>{const b=e.target.closest('[data-day]');if(!b)return;selDay=selDay===b.dataset.day?null:b.dataset.day;if(selDay)qd.value=selDay,syncPick();renderCal();renderSched()});
-$('sel-clear').addEventListener('click',()=>{selDay=null;renderCal();renderSched()});
+/* a picked past day or today files new writing as "written that day"; a future day files it as a schedule */
+function pickDay(d){
+  if(!d){qd.value='';qMade=null}
+  else if(d>T()){qd.value=d;qMade=null}
+  else{qd.value='';qMade=d===T()?null:d}
+  syncPick();
+}
+$('cal-grid').addEventListener('click',e=>{const b=e.target.closest('[data-day]');if(!b)return;selDay=selDay===b.dataset.day?null:b.dataset.day;pickDay(selDay);renderCal();renderSched()});
+$('sel-clear').addEventListener('click',()=>{selDay=null;pickDay(null);renderCal();renderSched()});
+function jumpTo(d){selDay=d;const x=parse(d);calMonth=new Date(x.getFullYear(),x.getMonth(),1);pickDay(d);setTab('sched')}
 
 /* delegated clicks */
 document.addEventListener('click',e=>{
@@ -575,6 +608,7 @@ document.addEventListener('click',e=>{
   if(e.target.closest('#recall-next')){S.recallSkip++;save();renderMemo();return}
   if(e.target.closest('#filter-x')){closeSearch();return}
   if(e.target.closest('#ex-clear')){ask('예시를 지울까요?','처음에 들어 있던 예시 생각들만 지워져요. 직접 쓴 생각은 그대로예요.','지우기',()=>{S.items=S.items.filter(i=>!i.ex);save();render();toast('예시를 지웠어요')});return}
+  const jp=e.target.closest('[data-jump]');if(jp){jumpTo(jp.dataset.jump);return}
   const go=e.target.closest('[data-go]');if(go){setTab(go.dataset.go);return}
   const b=e.target.closest('[data-id]');if(b)openSheet(b.dataset.id);
 });
@@ -585,18 +619,21 @@ function openSheet(id){
   const it=S.items.find(i=>i.id===id);if(!it)return;editing=it;
   $('e-text').value=it.text;$('e-date').value=it.date||'';$('e-time').value=it.time||'';
   setP($('e-imp'),!!it.important);setP($('e-pin'),!!it.pinned);setP($('e-done'),!!it.done);
-  const c=new Date(it.created);$('e-created').textContent=kd(ymd(c))+' '+pad(c.getHours())+':'+pad(c.getMinutes())+'에 떠오름';
+  $('e-made').value=ymd(new Date(it.created));
   $('scrim').hidden=false;
 }
 function closeSheet(){
   if(editing){const t=$('e-text').value.trim();
     if(!t)S.items=S.items.filter(i=>i!==editing);
-    else{if(t!==editing.text)delete editing.ex;editing.text=t;editing.date=$('e-date').value||null;editing.time=editing.date?($('e-time').value||null):null}
+    else{if(t!==editing.text)delete editing.ex;editing.text=t;editing.date=$('e-date').value||null;editing.time=editing.date?($('e-time').value||null):null;
+      const mv=$('e-made').value;
+      if(mv&&mv!==ymd(new Date(editing.created))){const o=new Date(editing.created),d=parse(mv);d.setHours(o.getHours(),o.getMinutes(),o.getSeconds());editing.created=d.getTime()}}
     save()}
   editing=null;$('scrim').hidden=true;render();
 }
 ['imp','pin','done'].forEach(k=>{const key={imp:'important',pin:'pinned',done:'done'}[k];$('e-'+k).addEventListener('click',()=>{editing[key]=!editing[key];setP($('e-'+k),editing[key])})});
 $('e-close').addEventListener('click',closeSheet);
+$('e-date-x').addEventListener('click',()=>{$('e-date').value='';$('e-time').value=''});
 $('scrim').addEventListener('click',e=>{if(e.target===$('scrim'))closeSheet()});
 $('e-del').addEventListener('click',()=>{
   const it=editing;
